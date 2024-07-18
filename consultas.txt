@@ -1,0 +1,47 @@
+HISTORIAL DE TODOS LOS VIAJES
+
+MATCH (bike:Bike)-[:TRAVELLED_ON]->(travel:Travel)-[:STARTED_AT]->(start:Station), (travel:Travel)-[:ENDED_AT]->(end:Station)
+RETURN bike.id, start.name AS start_station, end.name AS end_station, datetime.fromEpochMillis(toInteger(travel.startTime)) as start_time,
+datetime.fromEpochMillis(toInteger(travel.endTime)) as end_time, round(toInteger(travel.duration)  / 1000 / 60) AS duration_in_minutes , travel.cost
+ORDER BY start_time DESC
+
+HISTORIAL DE ESTACIONES DE UNA BICI CONCRETA
+
+MATCH (bike:Bike {id: "371179"})-[:TRAVELLED_ON]->(travel:Travel)-[:STARTED_AT]->(start:Station), (travel:Travel)-[:ENDED_AT]->(end:Station)
+RETURN bike.id, start.name AS start_station, end.name AS end_station, datetime.fromEpochMillis(toInteger(travel.startTime)) as start_time,
+datetime.fromEpochMillis(toInteger(travel.endTime)) as end_time, round(toInteger(travel.duration)  / 1000 / 60) AS duration_in_minutes, travel.cost
+ORDER BY start_time DESC
+
+VISUALIZACIÓN EN GRAFO
+
+MATCH (bike:Bike {id: "371199"})-[:TRAVELLED_ON]->(travel:Travel)-[:STARTED_AT]->(start:Station), (travel:Travel)-[:ENDED_AT]->(end:Station)
+RETURN start, travel, end
+ORDER BY  datetime.fromEpochMillis(toInteger(travel.startTime)) DESC
+
+RUTAS MÁS REPETIDAS
+
+MATCH (travel:Travel)-[:STARTED_AT]->(start:Station), (travel:Travel)-[:ENDED_AT]->(end:Station)
+RETURN start.name, end.name, count(travel) as numTrips
+ORDER BY numTrips DESC
+LIMIT 10
+
+ESTACIONES DE SALIDA MÁS UTILIZADAS
+
+MATCH (travel:Travel)-[:STARTED_AT]->(start:Station)
+RETURN start.name AS station, COUNT(*) AS num_trips
+ORDER BY num_trips DESC
+LIMIT 10
+
+ESTACIONES DE LLEGADA MÁS UTILIZADAS
+
+MATCH (travel:Travel)-[:ENDED_AT]->(end:Station)
+RETURN end.name AS station, COUNT(*) AS num_trips
+ORDER BY num_trips DESC
+LIMIT 10
+
+USO TOTAL DE CADA BICICLETA
+
+MATCH (bike:Bike)-[:TRAVELLED_ON]->(travel:Travel)
+RETURN bike.id, round(SUM(toInteger(travel.duration)) / 1000 / 60) AS total_duration
+ORDER BY total_duration DESC
+LIMIT 10
