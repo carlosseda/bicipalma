@@ -45,3 +45,40 @@ MATCH (bike:Bike)-[:TRAVELLED_ON]->(travel:Travel)
 RETURN bike.id, round(SUM(toInteger(travel.duration)) / 1000 / 60) AS total_duration
 ORDER BY total_duration DESC
 LIMIT 10
+
+FILTRAR MANTENIMIENTO
+
+MATCH (bike:Bike)-[:TRAVELLED_ON]->(travel:Travel)-[:STARTED_AT]->(start:Station), 
+      (travel:Travel)-[:ENDED_AT]->(end:Station)
+WITH bike.id AS bike_id, start.name AS start_station, end.name AS end_station, 
+     datetime.fromEpochMillis(toInteger(travel.startTime)) AS start_time, 
+     datetime.fromEpochMillis(toInteger(travel.endTime)) AS end_time, 
+     round(toInteger(travel.duration) / 1000 / 60) AS duration_in_minutes, 
+     travel.cost AS cost
+ORDER BY start_time DESC
+
+WITH collect({
+    bike_id: bike_id,
+    start_station: start_station,
+    end_station: end_station,
+    start_time: start_time,
+    end_time: end_time,
+    duration_in_minutes: duration_in_minutes,
+    cost: cost
+}) AS travels
+
+UNWIND travels AS t1
+WITH t1, [t IN travels WHERE 
+    t.start_station = t1.start_station AND 
+    t.end_station = t1.end_station AND 
+    abs(duration.between(t1.start_time, t.start_time).seconds) <= 15] AS similar_travels
+
+WITH t1, 
+     CASE 
+         WHEN size(similar_travels) > 1 THEN 'camion'
+         ELSE 'normal'
+     END AS transport_type
+
+RETURN t1.bike_id, t1.start_station, t1.end_station, t1.start_time, t1.end_time, 
+       t1.duration_in_minutes, t1.cost, transport_type
+ORDER BY t1.start_time DESC
